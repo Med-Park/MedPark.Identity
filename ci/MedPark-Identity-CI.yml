@@ -51,8 +51,8 @@ steps:
 - task: CmdLine@2
   displayName: 'Generate DB migration script for MedPark.Identity - MedParkDBContext'
   inputs:
-    script: 'dotnet ef migrations script --project $(proj-dir)/MedPark.Identity.csproj -i -c MedParkContext -o $(build.artifactstagingdirectory)/sql/MedPark.Identity_DB_Migrations.sql'
-  enabled: true
+    script: 'dotnet ef migrations script --project $(proj-dir)/MedPark.Identity.csproj -i -c MedParkContext -o $(build.artifactstagingdirectory)/sql/MedPark.Identity_MedParkContext_DB_Migrations.sql'
+  enabled: false
 
 - task: CmdLine@2
   displayName: 'Generate DB migration script for MedPark.Identity - ApplicationUserDBContext'
