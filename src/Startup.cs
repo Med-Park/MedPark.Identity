@@ -23,6 +23,8 @@ using Autofac.Extensions.DependencyInjection;
 using MedPark.Common.RestEase;
 using MedPark.Identity.Services;
 using Microsoft.Extensions.Hosting;
+using Consul;
+using MedPark.Common.Consul;
 
 namespace MedPark.Identity
 {
@@ -42,6 +44,8 @@ namespace MedPark.Identity
         {
             services.AddMvc(mvc => mvc.EnableEndpointRouting = false).SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
             services.AddHttpClient();
+            services.AddHealthChecks();
+            services.AddConsul();
 
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
@@ -84,7 +88,7 @@ namespace MedPark.Identity
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostEnvironment env, IHostApplicationLifetime lifetime, IConsulClient consulClient)
         {
             if (env.IsDevelopment())
             {
@@ -97,12 +101,22 @@ namespace MedPark.Identity
                 app.UseHsts();
             }
 
-            app.UseRabbitMq();
-
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
+            app.UseRabbitMq();
             app.UseIdentityServer();
+            app.UseRouting();
+
+            app.UseEndpoints(endpoit =>
+            {
+                endpoit.MapHealthChecks("/health");
+            });
+
+            var serviceID = app.UseConsul();
+            lifetime.ApplicationStopped.Register(() =>
+            {
+                consulClient.Agent.ServiceDeregister(serviceID);
+            });
 
             app.UseMvcWithDefaultRoute();
         }
